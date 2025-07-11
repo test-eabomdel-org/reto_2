@@ -1,24 +1,129 @@
+
+const OpenAI = require('openai');
+const fs = require('fs');
+const path = require('path');
+
 class ReviewService {
-    async processReview(prDetails, commits, changes) {
-        // TODO: Implement your review logic here
-        // This method should analyze the PR details, commits, and changes
-        // and return a string response that determines approval/disapproval
+    constructor() {
+        // Configuración del cliente OpenAI
+        this.config = {
+            token: process.env.GITHUB_TOKEN || "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",
+            endpoint: "https://models.github.ai/inference",
+            model: "openai/gpt-4.1"
+        };
         
+        this.client = new OpenAI({ 
+            baseURL: this.config.endpoint, 
+            apiKey: this.config.token 
+        });
+    }
+
+    async processReview(prDetails, commits, changes) {
+        // Implementa la lógica de revisión usando OpenAI y lineamientos
         const responseString = await this.getResponseString(prDetails, commits, changes);
         return responseString;
     }
 
-    async getResponseString(prDetails, commits, changes) {
-        // This method is intentionally left unimplemented for custom logic
-        // You should implement your custom review logic here
-        // 
-        // Example implementation:
-        // - Analyze the changes
-        // - Check for specific patterns
-        // - Return "approve" or "disapprove" based on your criteria
-        //
-        // For now, returning a placeholder response
-        return "approve - Automated review completed successfully";
+    /**
+     * Lee el contenido de un archivo Markdown
+     * @param {string} mdPath - Ruta al archivo .md
+     * @returns {string} - Contenido del archivo Markdown
+     */
+    readMarkdownFile(mdPath) {
+        try {
+            if (!fs.existsSync(mdPath)) {
+                throw new Error(`El archivo ${mdPath} no existe`);
+            }
+            
+            const content = fs.readFileSync(mdPath, 'utf8');
+            return content;
+        } catch (error) {
+            throw new Error(`Error al leer el archivo Markdown: ${error.message}`);
+        }
+    }
+
+    async getResponseString(prDetails, commits, changes, options = {}) {
+        const defaultOptions = {
+            temperature: 0.3, // Más determinístico para revisiones
+            top_p: 1.0,
+            model: this.config.model
+        };
+
+        const finalOptions = { ...defaultOptions, ...options };
+
+        try {
+            // Leer el contenido del archivo Markdown con lineamientos
+            const guidelinesPath = path.join(__dirname, '../guidelines/node.md');
+            const markdownContent = this.readMarkdownFile(guidelinesPath);
+
+            // Construir el prompt del usuario con toda la información del PR
+            const userPrompt = `
+                ## PULL REQUEST PARA REVISIÓN
+
+                ### Detalles del Pull Request:
+                ${JSON.stringify(prDetails, null, 2)}
+
+                ### Commits incluidos:
+                ${JSON.stringify(commits, null, 2)}
+
+                ### Cambios en archivos:
+                ${JSON.stringify(changes, null, 2)}
+
+                Por favor, revisa este Pull Request siguiendo todos los lineamientos y estándares proporcionados.
+            `;
+
+            const response = await this.client.chat.completions.create({
+                messages: [
+                    { 
+                        role: "system", 
+                        content: `Eres un revisor senior de código especializado en Node.js y mejores prácticas de desarrollo. Tu tarea es revisar Pull Requests de manera exhaustiva y profesional.
+                        ## LINEAMIENTOS Y ESTÁNDARES A SEGUIR:
+                        ${markdownContent}
+
+                        ## INSTRUCCIONES DE REVISIÓN:
+                        1. Analiza meticulosamente el Pull Request completo (detalles, commits y cambios)
+                        2. Evalúa cada aspecto contra los lineamientos proporcionados
+                        3. Genera un comentario de revisión profesional y constructivo
+                        4. Para cada punto evaluado, usa:
+                        - ✅ Si cumple con los estándares
+                        - ❌ Si NO cumple con los estándares
+                        - ⚠️ Si necesita atención o mejoras menores
+
+                        ## FORMATO DE RESPUESTA:
+                        Estructura tu respuesta con las siguientes secciones:
+
+                        ### 📋 Resumen Ejecutivo
+                        [Evaluación general del PR]
+
+                        ### 🔍 Revisión Detallada
+
+                        #### ❌ Aspectos que NO cumplen los estándares:
+                        - [Lista de problemas críticos que deben corregirse]
+
+                        #### ⚠️ Sugerencias de mejora:
+                        - [Lista de mejoras recomendadas]
+
+                        ### 📝 Comentarios específicos por archivo:
+                        [Si aplica, comentarios sobre archivos específicos]
+
+                        ### 🎯 Conclusión y Recomendación:
+                        [Decisión final: APROBAR ✅, RECHAZAR ❌, o SOLICITAR CAMBIOS ⚠️]
+
+                        Sé específico, constructivo y siempre referencia los lineamientos cuando señales problemas o mejoras.` 
+                    },
+                    { role: "user", content: userPrompt }
+                ],
+                temperature: finalOptions.temperature,
+                top_p: finalOptions.top_p,
+                model: finalOptions.model
+            });
+            console.log("Respuesta del modelo:", JSON.stringify(response, null, 2));
+            return response.choices[0].message.content;
+        } catch (error) {
+            console.error(`Error al revisar el Pull Request: ${error.message}`);
+            // Fallback en caso de error con la API
+            return "approve - Error en la revisión automática, requiere revisión manual";
+        }
     }
 }
 

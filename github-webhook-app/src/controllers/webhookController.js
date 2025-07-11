@@ -27,7 +27,7 @@ class WebhookController {
                 
                 await this.githubService.commentOnPullRequest(owner, repo, prNumber, responseString);
                 
-                if (responseString.includes('approve')) {
+                if (responseString.includes('APROBAR')) {
                     await this.githubService.approvePullRequest(owner, repo, prNumber);
                 } else {
                     await this.githubService.disapprovePullRequest(owner, repo, prNumber);
