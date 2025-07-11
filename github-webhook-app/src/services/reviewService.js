@@ -120,6 +120,7 @@ class ReviewService {
             console.log("Respuesta del modelo:", JSON.stringify(response, null, 2));
             return response.choices[0].message.content;
         } catch (error) {
+            console.error("error xd:", JSON.stringify(error, null, 2));
             console.error(`Error al revisar el Pull Request: ${error.message}`);
             // Fallback en caso de error con la API
             return "approve - Error en la revisión automática, requiere revisión manual";
