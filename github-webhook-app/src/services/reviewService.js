@@ -60,12 +60,6 @@ class ReviewService {
             const userPrompt = `
                 ## PULL REQUEST PARA REVISIÓN
 
-                ### Detalles del Pull Request:
-                ${JSON.stringify(prDetails, null, 2)}
-
-                ### Commits incluidos:
-                ${JSON.stringify(commits, null, 2)}
-
                 ### Cambios en archivos:
                 ${JSON.stringify(changes, null, 2)}
 
@@ -92,21 +86,7 @@ class ReviewService {
                         ## FORMATO DE RESPUESTA:
                         Estructura tu respuesta con las siguientes secciones:
 
-                        ### 📋 Resumen Ejecutivo
-                        [Evaluación general del PR]
-
-                        ### 🔍 Revisión Detallada
-
-                        #### ❌ Aspectos que NO cumplen los estándares:
-                        - [Lista de problemas críticos que deben corregirse]
-
-                        #### ⚠️ Sugerencias de mejora:
-                        - [Lista de mejoras recomendadas]
-
-                        ### 📝 Comentarios específicos por archivo:
-                        [Si aplica, comentarios sobre archivos específicos]
-
-                        ### 🎯 Conclusión y Recomendación:
+                        ### 🎯 Conclusión:
                         [Decisión final: APROBAR ✅, RECHAZAR ❌, o SOLICITAR CAMBIOS ⚠️]
 
                         Sé específico, constructivo y siempre referencia los lineamientos cuando señales problemas o mejoras.` 
