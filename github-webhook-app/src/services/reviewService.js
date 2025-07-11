@@ -7,7 +7,7 @@ class ReviewService {
     constructor() {
         // Configuración del cliente OpenAI
         this.config = {
-            token: process.env.GITHUB_TOKEN || "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",
+            token: process.env.GITHUB_TOKEN,
             endpoint: "https://models.github.ai/inference",
             model: "openai/gpt-4.1"
         };
