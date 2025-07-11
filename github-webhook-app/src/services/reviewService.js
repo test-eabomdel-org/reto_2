@@ -9,7 +9,7 @@ class ReviewService {
         this.config = {
             token: process.env.GITHUB_TOKEN,
             endpoint: "https://models.github.ai/inference",
-            model: "openai/gpt-4.1"
+            model: "openai/gpt-4o"
         };
         
         this.client = new OpenAI({ 
